@@ -1,0 +1,360 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<style>
+		html {
+			overflow:hidden;
+		}
+
+		.tileSquare {
+			position: absolute;
+			height: 32px;
+			width: 32px;
+			padding: 0px;
+			z-index: 1;
+		}
+		.fogOfWar {
+			position: absolute;
+			height: 32px;
+			width: 32px;
+			padding: 0px;
+			z-index: 1000;
+		}
+		.boardPiece {
+			position: absolute;
+			width:32px;
+			height:48px;
+			background-size:100%;
+		}
+		.tileHover {
+			border: 3px solid #66BBFF;
+			margin-left: -3px;
+			margin-top: -3px;
+		}
+		.grassTile {
+			background-color: #11CC55;
+		}
+		.sandTile {
+			background-color: #CCAA88;
+		}
+		.dirtTile {
+			background-color: #996633;
+		}
+		.greyRockTile {
+			background-color: #666666;
+		}
+		.waterTile {
+			background-color: #0011DD;
+		}
+		.bottomBox {
+			position:absolute;
+			bottom: 0px;
+			z-index:300;
+		}
+		#leftBox {
+			left: 0px;
+			width: 280px;
+			height:320px;
+			background-color: #000000;
+		}
+		#midBox {
+			left: 280px;
+			height:260px;
+			background-color: #aaa;
+		}
+		#rightBox {
+			right: 0px;
+			width: 320px;
+			height:320px;
+			background-color: #222222;
+			color:#dddddd;
+		}
+	</style>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+	<script>
+		var miscHelpers = {
+			pickRandomKey: function(obj) {
+			    var result;
+			    var count = 0;
+			    for (var prop in obj)
+			        if (Math.random() < 1/++count)
+			           result = prop;
+			    return result;
+			}
+		}
+		var ggg1 = {
+			terrainList : [
+				"grassTile",
+				"sandTile",
+				"dirtTile",
+				"greyRockTile",
+				"waterTile"
+			],
+			terrainMap : {
+				"grassTile": {
+					r: "11",
+					g: "CC",
+					b: "55"
+				},
+				"sandTile": {
+					r: "CC",
+					g: "AA",
+					b: "88"
+				},
+				"dirtTile": {
+					r: "99",
+					g: "66",
+					b: "33"
+				},
+				"greyRockTile": {
+					r: "66",
+					g: "66",
+					b: "66"
+				},
+				"waterTile": {
+					r: "00",
+					g: "11",
+					b: "DD"
+				}
+			},
+			displayVariables : {
+				context: null,
+				oneByOne: null,
+				miniMapBottomLeftX : 0,
+				miniMapBottonLeftY : 0
+			},
+			unitAssets : {
+				warriorUnit : "roman_male_warrior.png"
+			},
+			activeUnits : {}
+		};
+		ggg1.tileSize = 32;
+		ggg1.addUnitToMap = function(unitX, unitY, unit) {
+			ggg1.gameMap[unitX][unitY].unitsPresent.push(unit);
+			ggg1.activeUnits[unit.unitId] = unit;
+			unit.position = ggg1.gameMap[unitX][unitY];
+		};
+		ggg1.initGameMap = function() {
+			ggg1.gameMap = [];
+			for(var i = 0; i<400; i++){
+				var thisLine = [];
+				for(var j = 0; j<400; j++){
+					thisLine.push({
+						xPos: i,
+						yPos:j,
+						tileType: miscHelpers.pickRandomKey(ggg1.terrainMap),
+						visible: false,
+						unitsPresent: []
+					});
+				}
+				ggg1.gameMap.push(thisLine);
+			}
+			ggg1.addUnitToMap(6,6,{unitType:"warriorUnit", unitId:"exampleUnit"});
+		};
+		ggg1.TSTmoveUnitRight = function(unitId) {
+			var unit = ggg1.activeUnits[unitId];
+			var x = unit.position.xPos;
+			var y = unit.position.yPos;
+			ggg1.unitMoving(unit, x, y, (x+1), y);
+		}
+		ggg1.TSTmoveUnitOffset = function(unitId, xOff, yOff) {
+			var unit = ggg1.activeUnits[unitId];
+			var x = unit.position.xPos;
+			var y = unit.position.yPos;
+			ggg1.unitMoving(unit, x, y, (x+xOff), (y+yOff));
+		}
+		ggg1.unitMoving = function(unit, initialX, initialY, newX, newY) {
+
+			var oldPosition = unit.position;
+			if(initialY !== oldPosition.yPos){
+				throw new "Need to handle lost moves"
+			}
+			if(initialX !== oldPosition.xPos){
+				throw new "Need to handle lost moves"
+			}
+			oldPosition.unitsPresent = [];  //#FIXME can have multiple units in a tile?
+			unit.position = ggg1.gameMap[newX][newY];
+			unit.position.unitsPresent.push(unit);
+			var domElement = document.getElementById("gameUnit"+unit.unitId);
+			var moveX = newX - initialX;
+			var moveY = newY - initialY;
+			console.log("GOGO MOVE!!!");
+			console.log(moveX);
+			console.log(moveY);
+			/*domElement.style.left += (moveX * ggg1.tileSize);
+			domElement.style.top -= (moveY * ggg1.tileSize);*/
+			var leftString = (moveX > 0 ? "+" : "-") + "=" + (moveX * ggg1.tileSize).toString();
+			var topString = (moveY > 0 ? "+" : "-") + "=" + (moveY * ggg1.tileSize).toString();
+			$( domElement ).animate({
+			    left: leftString,
+			    top: topString
+			}, 2000, function() {
+		    	// Animation complete.
+			});
+
+		}
+		ggg1.domTileToDataTile = function(domTile) {
+			var idStr = domTile.getAttribute('id');
+			var coordList = idStr.replace("gameTile", "").split(".");
+			var xCoord = parseInt(coordList[0]);
+			var yCoord = parseInt(coordList[1]);
+			var dataTile = ggg1.gameMap[xCoord][yCoord];
+			return dataTile
+		}
+		ggg1.domUnitToDataUnit = function(domUnit) {
+			var idStr = domUnit.getAttribute('id');
+			var unitId = idStr.replace("gameUnit", "");
+			var dataUnit = ggg1.activeUnits[unitId];
+			return dataUnit
+		}
+		
+		//MOUSE STUFF
+
+		ggg1.mouseOverTile = function(tile) {
+			tile.classList.add("tileHover");
+			tile.style["z-index"] = 3;
+			//console.log($(this).attr("id"));
+			$("#rightBox").html(tile.getAttribute("id")+"<br/>"+ggg1.domTileToDataTile(tile).tileType);
+		}
+		ggg1.mouseOffTile = function(tile) {
+			tile.classList.remove("tileHover");
+			tile.style["z-index"] = 1;
+		}
+		ggg1.mouseOverUnit = function(unit) {
+			unit.classList.add("tileHover");
+			unit.style["z-index"] += 3;
+			//console.log($(this).attr("id"));
+			var dataUnit = ggg1.domUnitToDataUnit(unit);
+			console.log(dataUnit);
+			var unitInfo = "<h3>" + dataUnit.unitId + 
+				"</h3><ul><li><b>X Pos:</b> " + dataUnit.position.xPos +
+				"</li><li><b>Y Pos:</b> " + dataUnit.position.yPos +
+				"</li><li><b>Unit Type:</b> " + dataUnit.unitType +
+				"</li></ul>";
+			$("#rightBox").html(unitInfo);
+		}
+		ggg1.mouseOffUnit = function(unit) {
+			unit.classList.remove("tileHover");
+			unit.style["z-index"] -= 3;
+		}
+
+		//DISPLAY STUFF
+
+		ggg1.leftFromGBX = function(gameBoardX) {
+			var screenLeft = gameBoardX - ggg1.displayVariables.bottomLeftX;
+			return screenLeft*ggg1.tileSize
+		}
+		ggg1.squaresTopFromGBY = function(gameBoardY, logging) {
+			var returnMe = ggg1.displayVariables.bottomLeftY + ggg1.displayVariables.tallTileCount - gameBoardY;
+			if(logging){
+				console.log("BEGIN THINGS");
+				console.log(ggg1.displayVariables.bottomLeftY);
+				console.log(ggg1.displayVariables.tallTileCount);
+				console.log(gameBoardY);
+				console.log(returnMe);
+			}
+			return returnMe
+		}
+		ggg1.topFromGBY = function(gameBoardY) {
+			var screenTop = ggg1.squaresTopFromGBY(gameBoardY);
+			return screenTop*ggg1.tileSize;
+		}
+		ggg1.displayTile = function(gameBoardX, gameBoardY) {
+			//alert("should write...");
+
+			var left = ggg1.leftFromGBX(gameBoardX);
+			var top = ggg1.topFromGBY(gameBoardY);
+			var tile = ggg1.gameMap[gameBoardX][gameBoardY];
+			var tileText = '<div id="gameTile' + gameBoardX + '.' + gameBoardY + 
+			'" onmouseover="ggg1.mouseOverTile(this);" onmouseout="ggg1.mouseOffTile(this);" class="tileSquare ' +
+			tile.tileType + '" style="left: ' + left.toString() +
+			'px; top:' + top.toString() + 
+			'px;"></div>';
+			//console.log(tileText);
+			$(document.body).append(tileText);
+			/*if(!tile.visible){
+				var fogText = '<img class="fogOfWar' +
+					'" style="left: ' + left.toString() +
+						'px; top:' + (top - 12).toString() + 
+						'px;" src="Fog.png"/>';
+				$(document.body).append(fogText);
+			}*/
+			_.each(tile.unitsPresent, function(unit) {
+				if(unit){
+					console.log(unit);
+				}
+				var unitText = '<img id="gameUnit' + unit.unitId + 
+					'" onmouseover="ggg1.mouseOverUnit(this);" onmouseout="ggg1.mouseOffUnit(this);" class="boardPiece' +
+					'" style="left: ' + left.toString() +
+						'px; top:' + (top - 16).toString() + 
+						'px; z-index: ' + (ggg1.squaresTopFromGBY(gameBoardY) + 5).toString() + 
+					'" src="' + ggg1.unitAssets[unit.unitType] + '"/>';
+				console.log(unitText);
+				$(document.body).append(unitText);
+			});
+		}
+		ggg1.drawMiniMap = function() {
+			var canvasHandle = document.getElementById('leftBox');
+			ggg1.displayVariables.context = canvasHandle.getContext("2d");
+			ggg1.displayVariables.oneByOne = ggg1.displayVariables.context.createImageData(1,1); // only do this once per page
+			var d  = ggg1.displayVariables.oneByOne.data;                    // only do this once per page
+			d[0] = 255;
+			d[1] = 255;
+			d[2] = 255;
+			d[3] = 255;
+			ggg1.displayVariables.context.putImageData( id, x, y );  
+		}
+		ggg1.refreshMap = function(bottomLeftX, bottomLeftY) {
+			$(".gameTile").remove();
+			$(".boardPiece").remove();
+			if(!bottomLeftX)
+				bottomLeftX = 0;
+			if(!bottomLeftY)
+				bottomLeftY = 0;
+
+			$("#midBox").css("width", window.innerWidth - 600);
+			
+			ggg1.displayVariables.bottomLeftX = bottomLeftX;
+			ggg1.displayVariables.bottomLeftY = bottomLeftY;
+			ggg1.displayVariables.longTileCount = Math.ceil(window.innerWidth / ggg1.tileSize);
+			ggg1.displayVariables.tallTileCount = Math.ceil((window.innerHeight-275) / ggg1.tileSize);
+			
+			//console.log(JSON.stringify(ggg1));
+			for(var i = 0; i<ggg1.displayVariables.longTileCount; i++){
+				for(var j = 0; j<ggg1.displayVariables.tallTileCount; j++){
+					var gameBoardX = bottomLeftX + i;
+					var gameBoardY = bottomLeftY + ggg1.displayVariables.tallTileCount - j;
+					//console.log(gameBoardX);
+					//console.log(gameBoardY);
+
+
+					ggg1.displayTile(gameBoardX, gameBoardY);
+
+					
+				}
+			}
+		}
+		$(function(){
+			//alert("gogo jq!");
+			ggg1.initGameMap();
+			ggg1.refreshMap();
+			ggg1.drawMiniMap();
+			
+			
+		});
+		$(window).resize(function(){
+			ggg1.refreshMap();
+
+		});
+	</script>
+</head>
+<body>
+	<canvas id="leftBox" class="bottomBox"></canvas>
+	<div id="midBox" class="bottomBox">
+		<a style="color: #00F;" onClick="ggg1.TSTmoveUnitRight('exampleUnit');"><u>Move exampleUnit right</u></a>
+	</div>
+	<div id="rightBox" class="bottomBox"></div>
+</body>
+</html>
